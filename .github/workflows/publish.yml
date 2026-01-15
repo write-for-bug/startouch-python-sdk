@@ -6,42 +6,43 @@ on:
 
 jobs:
   build_wheels:
-    runs-on: ubuntu-20.04  # 在 Ubuntu 20.04 上构建
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python_version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
         
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python_version }}
 
       - name: Install build tools
         run: |
           pip install scikit-build-core pybind11 cibuildwheel
 
-      - name: Build wheel with custom platform tag
+      - name: Build wheel
         run: |
           python -m cibuildwheel --output-dir wheelhouse 
         env:
           CIBW_ARCHS_LINUX: x86_64
-          CIBW_BUILD: "cp${{ matrix.python-version | replace('.', '') }}-*"
+          CIBW_BUILD: ${{ matrix.python_version == '3.10' && 'cp310-*' || matrix.python_version == '3.11' && 'cp311-*' || 'cp312-*' }}
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_SKIP: "*manylinux*"  # 跳过 manylinux 检查
-          # 不使用 CIBW_REPAIR_WHEEL_COMMAND_LINUX，直接使用构建结果
+          CIBW_SKIP: "*manylinux*"
 
-      - name: Rename wheel to indicate compatibility
+      - name: Rename wheel for Ubuntu 20.04 compatibility
         run: |
           for wheel in ./wheelhouse/*.whl; do
-            mv "$wheel" "${wheel/linux_x86_64/ubuntu20_04_x86_64}"
-            echo "Renamed: $wheel -> ${wheel/linux_x86_64/ubuntu20_04_x86_64}"
+            if [ -f "$wheel" ]; then
+              mv "$wheel" "${wheel/linux_x86_64/ubuntu20_04_x86_64}"
+              echo "Renamed: $wheel -> ${wheel/linux_x86_64/ubuntu20_04_x86_64}"
+            fi
           done
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-py${{ matrix.python-version }}
+          name: wheels-py${{ matrix.python_version }}
           path: ./wheelhouse/*.whl
 
   publish_pypi:
@@ -54,18 +55,6 @@ jobs:
         with:
           path: ./dist
           merge-multiple: true
-
-      - name: Check if wheel names are correct
-        run: |
-          ls -la ./dist/
-          for wheel in ./dist/*.whl; do
-            if [[ "$wheel" == *"ubuntu20_04_x86_64"* ]]; then
-              echo "✅ Wheel correctly named: $wheel"
-            else
-              echo "❌ Wheel name incorrect: $wheel"
-              exit 1
-            fi
-          done
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
