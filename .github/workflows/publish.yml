@@ -30,7 +30,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.python_version == '3.10' && 'cp310-*' || matrix.python_version == '3.11' && 'cp311-*' || 'cp312-*' }}
           CIBW_BUILD_VERBOSITY: 1
           # 使用 manylinux_2_34，基于 GLIBC 2.34，兼容 Ubuntu 20.04 (2.31) 和 22.04 (2.35)
-          CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64:2024-10-24-df2c9e8
+          CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
           # 排除预编译库，因为 auditwheel 无法修复不兼容的符号
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: |
             auditwheel repair -w {dest_dir} {wheel} \
