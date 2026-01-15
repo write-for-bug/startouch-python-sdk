@@ -49,10 +49,7 @@ jobs:
           merge-multiple: true
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        env:
-          # 👇 关键！强制禁用 OIDC
-          GH_TOKEN: ""
+        uses: pypa/gh-action-pypi-publish@v1.8.10  # 👈 关键！使用旧版
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
