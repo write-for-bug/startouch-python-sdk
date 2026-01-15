@@ -26,10 +26,11 @@ jobs:
       - name: Build wheels
         run: |
         
-          python -m cibuildwheel --output-dir wheelhouse --verbosity 1
+          python -m cibuildwheel --output-dir wheelhouse 
         env:
           CIBW_ARCHS_LINUX: x86_64 aarch64
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          CIBW_BUILD_VERBOSITY: 1  # 👈 关键！启用详细构建日志
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
