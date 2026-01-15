@@ -9,42 +9,50 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-20.04,ubuntu-22.04]  # 可添加 windows-latest
+        python-version: ["3.10", "3.11", "3.12"]  # 移除 3.13（较新，兼容性问题多）
+        include:
+          - python-version: "3.10"
+            exclude-pattern: "startouch_python_sdk/startouch_python_sdk.cpython-310-x86_64-linux-gnu.so"
+          - python-version: "3.11" 
+            exclude-pattern: "startouch_python_sdk/startouch_python_sdk.cpython-311-x86_64-linux-gnu.so"
+          - python-version: "3.12"
+            exclude-pattern: "startouch_python_sdk/startouch_python_sdk.cpython-312-x86_64-linux-gnu.so"
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+        
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install build tools
         run: |
           pip install scikit-build-core pybind11 cibuildwheel
 
-      - name: Build wheels
+      - name: Build wheel for Python ${{ matrix.python-version }}
         run: |
-        
           python -m cibuildwheel --output-dir wheelhouse 
         env:
-          CIBW_ARCHS_LINUX: x86_64 
-          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
-          CIBW_BUILD_VERBOSITY: 1  # 👈 关键！启用详细构建日志
-          # CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_31_x86_64
+          CIBW_ARCHS_LINUX: x86_64
+          CIBW_BUILD: "cp${{ matrix.python-version | replace('.', '') }}-*"  # 动态构建单个版本
+          CIBW_BUILD_VERBOSITY: 1
           CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86_64
-          # 👈 关键：排除不兼容的库，但仍生成合规标签
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel} --exclude startouch_python_sdk/libstartouch.so
-    
-          # CIBW_SKIP: "*manylinux*"             # 跳过 manylinux 构建
-          # CIBW_REPAIR_WHEEL_COMMAND_LINUX: ""
+          # 👈 动态排除对应版本的扩展模块
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+            auditwheel repair -w {dest_dir} {wheel}
+            --exclude startouch_python_sdk/libstartouch.so
+            --exclude ${{ matrix.exclude-pattern }}
+
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-py${{ matrix.python-version }}
           path: ./wheelhouse/*.whl
 
   publish_pypi:
     needs: build_wheels
     runs-on: ubuntu-latest
-    # ❌ 不要添加 permissions: id-token: write
+    permissions:
+      id-token: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -52,7 +60,7 @@ jobs:
           merge-multiple: true
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.10  # 👈 关键！使用旧版
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
