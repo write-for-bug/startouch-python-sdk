@@ -2,6 +2,8 @@
 requires = ["scikit-build-core", "pybind11"]
 build-backend = "scikit_build_core.build"
 
+
+
 [project]
 name = "startouch-python-sdk"
 version = "0.1.0"
@@ -44,7 +46,8 @@ startouch_python_sdk = "startouch_python_sdk.cli:app"
 [tool.scikit-build]
 cmake.args = ["-DCMAKE_BUILD_TYPE=Release"]
 wheel.packages = ["startouch_python_sdk"]  # 打包 src/startouch_python_sdk/
-
+# 👇 在构建前安装 Eigen3
+build-options.before-build = "yum install -y eigen3-devel || apt-get update && apt-get install -y libeigen3-dev"
 
 
 
