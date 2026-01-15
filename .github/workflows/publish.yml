@@ -12,12 +12,6 @@ jobs:
         os: [ubuntu-20.04,ubuntu-22.04, macos-12]  # 可添加 windows-latest
     steps:
       - uses: actions/checkout@v4
-
-
-      # 切换到 startouch-python-sdk 目录
-      - name: Change to package directory
-        run: |
-          cd startouch-python-sdk
         
       - name: Set up Python
         uses: actions/setup-python@v5
