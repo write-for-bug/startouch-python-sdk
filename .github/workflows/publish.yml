@@ -33,8 +33,7 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_34_x86_64
           # 排除预编译库，因为 auditwheel 无法修复不兼容的符号
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: |
-            auditwheel repair -w {dest_dir} {wheel} \
-            --exclude startouch_python_sdk/libstartouch.so
+            auditwheel repair -w {dest_dir} {wheel} --exclude startouch_python_sdk/libstartouch.so
 
       - uses: actions/upload-artifact@v4
         with:
