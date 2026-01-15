@@ -13,9 +13,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # --- 查找依赖 ---
-find_package(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
 find_package(pybind11 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
+
+set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/eigen)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 # --- 定位原生库 ---
 set(LIB_STARTOUCH ${CMAKE_CURRENT_SOURCE_DIR}/src/startouch_python_sdk/libstartouch.so)
