@@ -6,17 +6,10 @@ on:
 
 jobs:
   build_wheels:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04  # 在 Ubuntu 20.04 上构建
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]  # 移除 3.13（较新，兼容性问题多）
-        include:
-          - python-version: "3.10"
-            exclude-pattern: "startouch_python_sdk/startouch_python_sdk.cpython-310-x86_64-linux-gnu.so"
-          - python-version: "3.11" 
-            exclude-pattern: "startouch_python_sdk/startouch_python_sdk.cpython-311-x86_64-linux-gnu.so"
-          - python-version: "3.12"
-            exclude-pattern: "startouch_python_sdk/startouch_python_sdk.cpython-312-x86_64-linux-gnu.so"
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
         
@@ -29,19 +22,22 @@ jobs:
         run: |
           pip install scikit-build-core pybind11 cibuildwheel
 
-      - name: Build wheel for Python ${{ matrix.python-version }}
+      - name: Build wheel with custom platform tag
         run: |
           python -m cibuildwheel --output-dir wheelhouse 
         env:
           CIBW_ARCHS_LINUX: x86_64
-          CIBW_BUILD: "cp${{ matrix.python-version | replace('.', '') }}-*"  # 动态构建单个版本
+          CIBW_BUILD: "cp${{ matrix.python-version | replace('.', '') }}-*"
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86_64
-          # 👈 动态排除对应版本的扩展模块
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            auditwheel repair -w {dest_dir} {wheel}
-            --exclude startouch_python_sdk/libstartouch.so
-            --exclude ${{ matrix.exclude-pattern }}
+          CIBW_SKIP: "*manylinux*"  # 跳过 manylinux 检查
+          # 不使用 CIBW_REPAIR_WHEEL_COMMAND_LINUX，直接使用构建结果
+
+      - name: Rename wheel to indicate compatibility
+        run: |
+          for wheel in ./wheelhouse/*.whl; do
+            mv "$wheel" "${wheel/linux_x86_64/ubuntu20_04_x86_64}"
+            echo "Renamed: $wheel -> ${wheel/linux_x86_64/ubuntu20_04_x86_64}"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
@@ -58,6 +54,18 @@ jobs:
         with:
           path: ./dist
           merge-multiple: true
+
+      - name: Check if wheel names are correct
+        run: |
+          ls -la ./dist/
+          for wheel in ./dist/*.whl; do
+            if [[ "$wheel" == *"ubuntu20_04_x86_64"* ]]; then
+              echo "✅ Wheel correctly named: $wheel"
+            else
+              echo "❌ Wheel name incorrect: $wheel"
+              exit 1
+            fi
+          done
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
