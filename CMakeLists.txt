@@ -40,7 +40,7 @@ target_include_directories(startouch_python_sdk PRIVATE
 target_link_libraries(startouch_python_sdk PRIVATE
     ${LIB_STARTOUCH}
     Threads::Threads
-    Eigen3::Eigen
+    #Eigen3::Eigen
 )
 
 # --- 设置 RPATH ---
