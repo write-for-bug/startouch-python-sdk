@@ -31,7 +31,10 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1  # 👈 关键！启用详细构建日志
           # CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_31_x86_64
           CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/manylinux_2_28_x86_64
-    
+          # 👈 关键：排除不兼容的库，但仍生成合规标签
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+            auditwheel repair -w {dest_dir} {wheel}
+            --exclude libstartouch.so
     
           # CIBW_SKIP: "*manylinux*"             # 跳过 manylinux 构建
           # CIBW_REPAIR_WHEEL_COMMAND_LINUX: ""
